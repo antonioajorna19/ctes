@@ -1,12 +1,15 @@
 import requests
 import os
 import shutil
+import threading
+import time
 
 
 NOMBRE_ARCHIVO = "hus.txt" #hus.txt o shipments.txt
 FORMATO_ARCHIVO = "xml" #pdf/xml
 NOMBRE_CARPETA_DE_DESCARGA = "CTES" #ctes o CTES o como quieran
 INFORMACION_DEL_TICKET = 1 #Marque 1 si adjuntaron los HUS o 2 para si adjuntaron los shipments
+
 
 def leer_archivo(nombre_archivo:str, listado_hus_o_shipments:list) ->None:
     """
@@ -19,13 +22,13 @@ def leer_archivo(nombre_archivo:str, listado_hus_o_shipments:list) ->None:
             listado_hus_o_shipments.append(linea.strip("\n"))
 
 
-def obtener_ctes(listado_shipments:list, nombre_carpeta:str) ->list:
+def obtener_ctes(listado_shipments:list, nombre_carpeta:str, shipments_sin_cte:list) ->None:
     """
     PRE:Recibimos como lista todos los shipments ademas de el nombre de la carpeta donde se descargaran las NF de los SH.
     POST:Al ser un procedimiento, se retorna un dato de tipo None.
     """
     #colocar los try correspondientes a la conexion con la api
-    shipments_sin_cte = list()
+    
     os.mkdir(nombre_carpeta)
     for id_shipment in listado_shipments:
 
@@ -35,8 +38,6 @@ def obtener_ctes(listado_shipments:list, nombre_carpeta:str) ->list:
                 cte_descargado.write(obtener_cte.content)
         except Exception:
             shipments_sin_cte.append(id_shipment)
-    
-    return shipments_sin_cte
 
 
 def comprimir_carpeta(nombre_carpeta:str) ->None:
@@ -82,18 +83,25 @@ def main() ->None:
 
     listado_hus = list()
     listado_shipments = list()
-    
+    shipments_sin_cte = list()
+
     if INFORMACION_DEL_TICKET == 1:
         leer_archivo(NOMBRE_ARCHIVO,listado_hus)
-        obtener_shipments_de_hus(listado_hus, listado_shipments)
+        hilo_1 = threading.Thread(target = obtener_shipments_de_hus, args = (listado_hus, listado_shipments))
+        hilo_2 = threading.Thread(target = obtener_ctes, args = (listado_shipments, NOMBRE_CARPETA_DE_DESCARGA, 
+                                                                shipments_sin_cte))
+        hilo_1.start()
+        time.sleep(3)
+        hilo_2.start()
+        hilo_2.join()
+        
 
     else:
         leer_archivo(NOMBRE_ARCHIVO, listado_shipments)
 
-    shipments_sin_cte = obtener_ctes(listado_shipments, NOMBRE_CARPETA_DE_DESCARGA)
     comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
     mostrar_shipments_sin_cte(shipments_sin_cte)
-
+    print(len(listado_shipments))
     print("Hemos finalizado")
 
 
