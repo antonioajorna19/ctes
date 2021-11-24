@@ -91,7 +91,7 @@ def main() ->None:
         hilo_2 = threading.Thread(target = obtener_ctes, args = (listado_shipments, NOMBRE_CARPETA_DE_DESCARGA, 
                                                                 shipments_sin_cte))
         hilo_1.start()
-        time.sleep(3)
+        time.sleep(0.8)
         hilo_2.start()
         hilo_2.join()
         
