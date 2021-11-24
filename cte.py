@@ -38,6 +38,8 @@ def obtener_ctes(listado_shipments:list, nombre_carpeta:str, shipments_sin_cte:l
                 cte_descargado.write(obtener_cte.content)
         except Exception:
             shipments_sin_cte.append(id_shipment)
+    
+    print("Obteniendos notas fiscales")
 
 
 def comprimir_carpeta(nombre_carpeta:str) ->None:
@@ -77,6 +79,8 @@ def obtener_shipments_de_hus(listado_hus:list, listado_shipments:list) ->None:
 
         for shipment_id in data_shipment:
             listado_shipments.append(shipment_id["id"])
+    
+    print("Obteniendo shipments.")
 
 
 def main() ->None:
@@ -101,7 +105,6 @@ def main() ->None:
 
     comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
     mostrar_shipments_sin_cte(shipments_sin_cte)
-    print(len(listado_shipments))
     print("Hemos finalizado")
 
 
