@@ -3,12 +3,12 @@ import os
 import shutil
 import threading
 import time
-
+import multiprocessing
 
 NOMBRE_ARCHIVO = "hus.txt" #hus.txt o shipments.txt
 FORMATO_ARCHIVO = "xml" #pdf/xml
 NOMBRE_CARPETA_DE_DESCARGA = "CTES" #ctes o CTES o como quieran
-INFORMACION_DEL_TICKET = 1 #Marque 1 si adjuntaron los HUS o 2 para si adjuntaron los shipments
+INFORMACION_DEL_TICKET = 2 #Marque 1 si adjuntaron los HUS o 2 para si adjuntaron los shipments
 
 
 def leer_archivo(nombre_archivo:str, listado_hus_o_shipments:list) ->None:
@@ -102,6 +102,8 @@ def main() ->None:
 
     else:
         leer_archivo(NOMBRE_ARCHIVO, listado_shipments)
+    
+    obtener_ctes(listado_shipments, NOMBRE_CARPETA_DE_DESCARGA, shipments_sin_cte)
 
     comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
     mostrar_shipments_sin_cte(shipments_sin_cte)
