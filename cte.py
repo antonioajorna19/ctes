@@ -1,25 +1,46 @@
 import requests
 import os
 import shutil
-import threading
-import time
-import multiprocessing
-
-NOMBRE_ARCHIVO = "hus.txt" #hus.txt o shipments.txt
-FORMATO_ARCHIVO = "xml" #pdf/xml
-NOMBRE_CARPETA_DE_DESCARGA = "CTES" #ctes o CTES o como quieran
-INFORMACION_DEL_TICKET = 2 #Marque 1 si adjuntaron los HUS o 2 para si adjuntaron los shipments
 
 
-def leer_archivo(nombre_archivo:str, listado_hus_o_shipments:list) ->None:
+NOMBRE_ARCHIVO = "shipments.txt" #hus.txt o shipments.txt
+FORMATO_ARCHIVO = "pdf" #pdf/xml
+NOMBRE_CARPETA_DE_DESCARGA = "prueba" #ctes o CTES o como quieran
+
+def Validating_HU(data:str):
+
+    '''
+    PRE:Recibimos el Dato, contamos las cantidades de digitos para identificar HU'S
+    POST: 
+    '''
+    text = [char for char in data]
+
+    if len(text) < 15 :
+        IsHU = False
+    else:
+        IsHU = True
+    
+    return IsHU
+
+
+def leer_archivo(nombre_archivo:str) ->None:
     """
     PRE:Se recibe el nombre del archivo a procesar.
     POST:Se retorna como lista los ids de CTES a procesar.
     """
+    listado_hus = list()
+    listado_shipments_limpios = list()
 
     with open(nombre_archivo,"r") as archivo:
         for linea in archivo:
-            listado_hus_o_shipments.append(linea.strip("\n"))
+            if not Validating_HU(linea.strip("\n")):
+               listado_shipments_limpios.append(linea.strip("\n"))
+            else:
+                listado_hus.append(linea.strip("\n"))
+        if listado_hus != 0:
+            obtener_shipments_de_hus(listado_hus,listado_shipments_limpios)
+    return listado_shipments_limpios
+
 
 
 def obtener_ctes(listado_shipments:list, nombre_carpeta:str, shipments_sin_cte:list) ->None:
@@ -66,6 +87,7 @@ def mostrar_shipments_sin_cte(shipments_sin_cte:list) ->None:
             print(shipment)
 
 
+
 def obtener_shipments_de_hus(listado_hus:list, listado_shipments:list) ->None:
     """
     PRE:Recibimos el listado de ctes y el de los shipments(vacio), buscamos obtener los shipments de estos ctes.
@@ -85,26 +107,11 @@ def obtener_shipments_de_hus(listado_hus:list, listado_shipments:list) ->None:
 
 def main() ->None:
 
-    listado_hus = list()
-    listado_shipments = list()
     shipments_sin_cte = list()
+    Listado_shipments = leer_archivo(NOMBRE_ARCHIVO)
 
-    if INFORMACION_DEL_TICKET == 1:
-        leer_archivo(NOMBRE_ARCHIVO,listado_hus)
-        hilo_1 = threading.Thread(target = obtener_shipments_de_hus, args = (listado_hus, listado_shipments))
-        hilo_2 = threading.Thread(target = obtener_ctes, args = (listado_shipments, NOMBRE_CARPETA_DE_DESCARGA, 
-                                                                shipments_sin_cte))
-        hilo_1.start()
-        time.sleep(0.8)
-        hilo_2.start()
-        hilo_2.join()
-        
-
-    else:
-        leer_archivo(NOMBRE_ARCHIVO, listado_shipments)
-    
-    obtener_ctes(listado_shipments, NOMBRE_CARPETA_DE_DESCARGA, shipments_sin_cte)
-
+    obtener_ctes(Listado_shipments,NOMBRE_CARPETA_DE_DESCARGA,shipments_sin_cte)
+ 
     comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
     mostrar_shipments_sin_cte(shipments_sin_cte)
     print("Hemos finalizado")
