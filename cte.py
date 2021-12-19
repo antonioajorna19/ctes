@@ -5,9 +5,11 @@ import shutil
 
 NOMBRE_ARCHIVO = "shipments.txt" #hus.txt o shipments.txt
 FORMATO_ARCHIVO = "pdf" #pdf/xml
-NOMBRE_CARPETA_DE_DESCARGA = "prueba" #ctes o CTES o como quieran
+NOMBRE_CARPETA_DE_DESCARGA = "SSHP-314105ss" #ctes o CTES o como quieran
+
 
 def Validating_HU(data:str):
+
 
     '''
     PRE:Recibimos el Dato, contamos las cantidades de digitos para identificar HU'S
@@ -23,7 +25,7 @@ def Validating_HU(data:str):
     return IsHU
 
 
-def leer_archivo(nombre_archivo:str) ->None:
+def leer_archivo(nombre_archivo:str, hu_sin_shipments:list) ->list:
     """
     PRE:Se recibe el nombre del archivo a procesar.
     POST:Se retorna como lista los ids de CTES a procesar.
@@ -38,7 +40,7 @@ def leer_archivo(nombre_archivo:str) ->None:
             else:
                 listado_hus.append(linea.strip("\n"))
         if listado_hus != 0:
-            obtener_shipments_de_hus(listado_hus,listado_shipments_limpios)
+            obtener_shipments_de_hus(listado_hus,listado_shipments_limpios,hu_sin_shipments)
     return listado_shipments_limpios
 
 
@@ -72,7 +74,7 @@ def comprimir_carpeta(nombre_carpeta:str) ->None:
     shutil.make_archive(nombre_carpeta,"zip",nombre_carpeta)
 
 
-def mostrar_shipments_sin_cte(shipments_sin_cte:list) ->None:
+def mostrar_shipments_sin_cte(shipments_sin_cte:list, hu_sin_shipments:list) ->None:
 
     '''PRE:OBTENEMOS LOS SHIPMENTS SIN CTE EN UNA LISTA.
        POST:AL SER UN PROCEDIMIENTO SE RETORNA UN DATO DE TIPO NONE.'''
@@ -86,34 +88,44 @@ def mostrar_shipments_sin_cte(shipments_sin_cte:list) ->None:
         for shipment in shipments_sin_cte:
             print(shipment)
 
+    if len(hu_sin_shipments) == 0:
+        print("Se extrajo toda la data de los hus")
+    else:
+        print("HUS SIN PODER DESCARGAR SUS DATOS")
+        for hu_id in hu_sin_shipments:
+            print(hu_id)
 
 
-def obtener_shipments_de_hus(listado_hus:list, listado_shipments:list) ->None:
+def obtener_shipments_de_hus(listado_hus:list, listado_shipments:list, hu_sin_shipments:list) ->None:
     """
     PRE:Recibimos el listado de ctes y el de los shipments(vacio), buscamos obtener los shipments de estos ctes.
     POST:Una vez agregados los shipments de cada cte, se retorna un valor None, dado que es un procedimiento.
     """
     
     for hu_id in listado_hus:
-        informacion_hu = requests.get(f"http://internal-api.mercadolibre.com/tms-mlb/outbounds/{hu_id}/internal")
-        data_hu_formateada = informacion_hu.json()
-        data_shipment = data_hu_formateada["shipments"]
-
-        for shipment_id in data_shipment:
-            listado_shipments.append(shipment_id["id"])
+        try:
+            informacion_hu = requests.get(f"http://internal-api.mercadolibre.com/tms-mlb/outbounds/{hu_id}/internal")
+            data_hu_formateada = informacion_hu.json()
+            data_shipment = data_hu_formateada["shipments"]
     
+            for shipment_id in data_shipment:
+                listado_shipments.append(shipment_id["id"])
+        except Exception:
+             hu_sin_shipments.append(hu_id)
+
     print("Obteniendo shipments.")
 
 
 def main() ->None:
 
     shipments_sin_cte = list()
-    Listado_shipments = leer_archivo(NOMBRE_ARCHIVO)
+    hus_sin_shipments = list()
+    Listado_shipments = leer_archivo(NOMBRE_ARCHIVO, hus_sin_shipments)
 
     obtener_ctes(Listado_shipments,NOMBRE_CARPETA_DE_DESCARGA,shipments_sin_cte)
  
     comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
-    mostrar_shipments_sin_cte(shipments_sin_cte)
+    mostrar_shipments_sin_cte(shipments_sin_cte,hus_sin_shipments)
     print("Hemos finalizado")
 
 
